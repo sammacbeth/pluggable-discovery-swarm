@@ -1,0 +1,34 @@
+{
+    "manifest_version": 2,
+    "version": "0.1",
+    "name": "Discovery Swarm Web Tests",
+    "description": "",
+    "permissions": [],
+    "background": {
+        "scripts": ["background.js"]
+    },
+    "experiment_apis": {
+      "TCPSocket": {
+        "schema": "../node_modules/libdweb/src/TCPSocket/TCPSocket.json",
+        "child": {
+          "scopes": ["addon_child"],
+          "paths": [["TCPSocket"]],
+          "script": "../node_modules/libdweb/src/TCPSocket/Socket.js"
+        }
+      },
+      "ServiceDiscovery": {
+        "schema": "../node_modules/libdweb/src/ServiceDiscovery/ServiceDiscovery.json",
+        "child": {
+          "scopes": ["addon_child"],
+          "paths": [["ServiceDiscovery"]],
+          "script": "../node_modules/libdweb/src/ServiceDiscovery/client.js"
+        },
+        "parent": {
+          "scopes": ["addon_parent"],
+          "paths": [["ServiceDiscovery"]],
+          "script": "../node_modules/libdweb/src/ServiceDiscovery/host.js"
+        }
+      }
+    }
+  }
+  
