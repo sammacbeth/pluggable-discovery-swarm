@@ -38,12 +38,12 @@ class Swarm extends events.EventEmitter {
   }
 
   destroy(onclose) {
-    if (this._discovery) {
-      this._discovery.expire();
-    }
     this.introducers.forEach((introducer) => {
       introducer.removeListener('peer', this._onPeer);
     });
+    this._joined.forEach((key) => {
+      this.leave(Buffer.from(key, 'hex'));
+    })
     Object.keys(this._servers).forEach((type) => {
       this._servers[type].close();
       this._options.transport[type].removeListener('connection', this._onPeer);
@@ -75,65 +75,23 @@ class Swarm extends events.EventEmitter {
     this.introducers.forEach((introducer) => {
       introducer.join(name, opts);
     });
-
-    // if (false && browser.ServiceDiscovery) {
-    //   const services = browser.ServiceDiscovery.discover({
-    //     type: "dat",
-    //     protocol: "tcp"
-    //   });
-    //   (async () => {
-    //     for await (const service of services) {
-    //       if (service.name !== this.id.toString('hex').substring(service.name.length) && !service.lost) {
-    //         console.log('found peer at', `${service.host}:${service.port}`, service.name);
-    //         this.emit('peer', {
-    //           id: service.name,
-    //           host: service.host,
-    //           port: service.port,
-    //           channel: name,
-    //           retries: 0,
-    //           stream: async () => {
-    //             const socket = await browser.TCPSocket.connect({
-    //               host: service.host,
-    //               port: service.port,
-    //             });
-    //             return new SocketStream(socket);
-    //           },
-    //         });
-    //       }
-    //     }
-    //   })();
-    // }
-    // browser.TCPSocket.connect({
-    //   host: 'whoatemypi',
-    //   port: 3242,
-    // }).then(async (socket) => {
-    //   console.log('xxx', socket);
-    //   try {
-    //     await socket.opened
-    //     console.log('socket', socket.readyState);
-    //     this.emit('peer', {
-    //       id: `localhost:${port}`,
-    //       channel: name,
-    //       retries: 0,
-    //       stream: () => new SocketStream(socket),
-    //     });
-    //   } catch(e) {
-    //     console.error('socket error', e);
-    //   }
-    // });
   }
 
   leave(name) {
     const key = name.toString('hex');
     this._joined.delete(key);
     for (const [id, peer] of this._peers.entries()) {
-      if (peer.channel.toString('hex') === key) {
+      if (peer.channel && peer.channel.toString('hex') === key) {
         if (this.connections.has(id)) {
           this.connections.get(id).destroy();
         }
         this._peers.delete(id);
       }
     }
+
+    this.introducers.forEach((introducer) => {
+      introducer.leave(name);
+    });
   }
 
   async listen(port, onlistening) {
@@ -142,22 +100,12 @@ class Swarm extends events.EventEmitter {
         return this._options.transport[name].listen(port).then((server) => {
           console.log(`${name} server listening on ${server.port}`);
           this._servers[name] = server;
+          this._options.transport[name].port = server.port;
           this._options.transport[name].on('connection', this._onPeer);
         });
       }));
     }
     onlistening && onlistening();
-    // if (browser.ServiceDiscovery) {
-    //   browser.ServiceDiscovery.announce({
-    //     name: this.id.toString('hex'),
-    //     type: 'dat',
-    //     protocol: 'tcp',
-    //     port,
-    //   }).then((discovery) => {
-    //     console.log('Announced service:', discovery);
-    //     this._discovery = discovery;
-    //   });
-    // }
   }
 
   onPeer(peer) {

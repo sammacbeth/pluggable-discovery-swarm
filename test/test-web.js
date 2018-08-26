@@ -6,6 +6,7 @@ const chai = require('chai');
 const disc = require('../');
 const DatGatewayIntroducer = require('../web/dat-gateway');
 const TCPTransport = require('../webext/tcp-transport');
+const { DiscoveryIntroducer, DiscoveryAnnouncer } = require('../webext/service-discovery');
 
 mocha.setup('bdd');
 const expect = chai.expect;
@@ -100,8 +101,9 @@ describe('hyperdrive replication', () => {
       archive = await createHyperDrive(key);
     });
 
-    it('replicates', async () => {
-      const gatewayServers = ['ws://macbeth.cc:3000', 'wss://dat-gateway.now.sh'];
+    it('replicates', async function () {
+      this.timeout(5000);
+      const gatewayServers = ['wss://dat-gateway.now.sh'];
       const opts = {
         sparse: true,
         introducers: [new DatGatewayIntroducer(gatewayServers)],
@@ -196,6 +198,40 @@ describe('hyperdrive replication', () => {
         });
       });
     });
+  });
+
+  context('Discovery', () => {
+
+    let announcer;
+    let introducer;
+
+    beforeEach(async () => {
+      archive = await createHyperDrive(key);
+    });
+
+    afterEach(() => {
+      announcer.leave(archive.discoveryKey);
+      introducer.leave(archive.discoveryKey);
+    });
+
+    it('emits a peer when searching for a discovery key', function(done) {
+      this.timeout(5000);
+      announcer = new DiscoveryAnnouncer();
+      const opts = {
+        transport: {
+          tcp: { port: 3154 }
+        }
+      };
+      announcer.join(archive.discoveryKey, opts);
+      introducer = new DiscoveryIntroducer();
+      introducer.on('peer', (peer) => {
+        console.log('peer', peer);
+        chai.expect(peer.port).to.equal(3154);
+        chai.expect(peer.channel).to.equal(archive.discoveryKey);
+        done();
+      });
+      introducer.join(archive.discoveryKey);
+    });    
   });
 
 });
