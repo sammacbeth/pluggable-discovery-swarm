@@ -6,7 +6,7 @@ const chai = require('chai');
 const disc = require('../');
 const DatGatewayIntroducer = require('../web/dat-gateway');
 const TCPTransport = require('../webext/tcp-transport');
-const { DiscoveryIntroducer, DiscoveryAnnouncer } = require('../webext/service-discovery');
+const LanDiscovery = require('../webext/service-discovery');
 
 mocha.setup('bdd');
 const expect = chai.expect;
@@ -103,7 +103,7 @@ describe('hyperdrive replication', () => {
 
     it('replicates', async function () {
       this.timeout(5000);
-      const gatewayServers = ['wss://dat-gateway.now.sh'];
+      const gatewayServers = ['ws://macbeth.cc:3000'];
       const opts = {
         sparse: true,
         introducers: [new DatGatewayIntroducer(gatewayServers)],
@@ -216,14 +216,14 @@ describe('hyperdrive replication', () => {
 
     it('emits a peer when searching for a discovery key', function(done) {
       this.timeout(5000);
-      announcer = new DiscoveryAnnouncer();
+      announcer = new LanDiscovery({ announce: true });
       const opts = {
         transport: {
           tcp: { port: 3154 }
         }
       };
       announcer.join(archive.discoveryKey, opts);
-      introducer = new DiscoveryIntroducer();
+      introducer = new LanDiscovery({ announce: false });
       introducer.on('peer', (peer) => {
         console.log('peer', peer);
         chai.expect(peer.port).to.equal(3154);
