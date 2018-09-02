@@ -133,7 +133,7 @@ class Swarm extends events.EventEmitter {
     if (peer.stream && this._stream) {
       const connectPeer = async () => {
         const peerStream = await peer.stream();
-        const replStream = this._stream(peer)
+        const replStream = this._stream(peer);
         const connection = pump(peerStream, replStream, peerStream, (err) => {
           console.error('stream error', err);
           this.connections.delete(peer.id)

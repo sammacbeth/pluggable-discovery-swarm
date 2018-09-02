@@ -1,12 +1,16 @@
 const events = require('events');
 
-class DiscoveryIntroducer extends events.EventEmitter {
-  constructor() {
+class LanDiscovery extends events.EventEmitter {
+  constructor(opts) {
     super();
+    if (!opts) opts = {};
     this.joined = new Set();
+    this.announce = !!opts.announce;
+    this.announced = new Map();
+    this.self = {};
   }
   
-  async join(discoveryKey) {
+  async join(discoveryKey, opts) {
     const key = discoveryKey.toString('hex');
     if (this.joined.has(key)) {
       return;
@@ -14,62 +18,55 @@ class DiscoveryIntroducer extends events.EventEmitter {
     this.joined.add(key);
 
     const services = browser.ServiceDiscovery.discover({
-      type: "dat",
-      protocol: "tcp"
+      type: 'dat',
+      protocol: 'tcp',
     });
     for await (const service of services) {
       if (!this.joined.has(key)) {
         break;
       }
-      if (service.name.startsWith(key) && !service.lost) {
+      if (service.host === this.self.host && service.port === this.self.port) {
+        // don't connect to self
+        continue;
+      }
+      if (service.name.substring(0, 30) === key.substring(0, 30) && !service.lost) {
         this.emit('peer', {
           id: `${service.host}:${service.port}`,
           host: service.host,
           port: service.port,
           channel: discoveryKey,
+          type: 'tcp',
         });
       }
     }
-  }
-
-  leave(key) {
-    this.joined.delete(key.toString('hex'));
-  }
-}
-
-class DiscoveryAnnouncer extends events.EventEmitter {
-  constructor() {
-    super();
-    this.announced = new Map();
-  }
-
-  join(discoveryKey, opts) {
-    const key = discoveryKey.toString('hex');
-    if (opts.transport.tcp.port && !this.announced.has(key)) {
+    
+    if (this.announce && opts.transport.tcp.port && !this.announced.has(key)) {
       const discovery = browser.ServiceDiscovery.announce({
         name: key,
         type: 'dat',
         protocol: 'tcp',
         port: opts.transport.tcp.port,
       });
-      this.announced.set(key, discovery);
-      discovery.then(() => {
-        console.log('announced service', discovery);
+      discovery.then((service) => {
+        this.self.host = service.host;
+        this.self.port = service.port;
+        this.announced.set(key, service);
+        console.log('announced service', service);
       });
     }
   }
 
-  async leave(discoveryKey) {
+  leave(discoveryKey) {
     const key = discoveryKey.toString('hex');
-    const discovery = await this.announced.get(key);
-    if (discovery) {
-      discovery.expire();
+    this.joined.delete(key);
+    if (this.announced.has(key)) {
+      const discovery = this.announced.get(key);
+      if (discovery) {
+        discovery.expire();
+      }
+      this.announced.delete(key);
     }
-    this.announced.delete(key);
   }
 }
 
-module.exports = {
-  DiscoveryIntroducer,
-  DiscoveryAnnouncer,
-};
+module.exports = LanDiscovery;
