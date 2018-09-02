@@ -7,9 +7,8 @@ const RECONNECT_WAIT = [1000, 1000, 5000, 15000]
 class Swarm extends events.EventEmitter {
   constructor(opts) {
     super();
-    console.log('swarm', opts);
     if (!opts) opts = {};
-
+    this.debug = opts.debug;
     this.id = opts.id || crypto.randomBytes(32);
 
     this.maxConnections = opts.maxConnections || 0;
@@ -98,7 +97,9 @@ class Swarm extends events.EventEmitter {
     if (this._options.transport) {
       await Promise.all(Object.keys(this._options.transport).map((name) => {
         return this._options.transport[name].listen(port).then((server) => {
-          console.log(`${name} server listening on ${server.port}`);
+          if (this.debug) {
+            console.log(`${name} server listening on ${server.port}`);
+          }
           this._servers[name] = server;
           this._options.transport[name].port = server.port;
           this._options.transport[name].on('connection', this._onPeer);
@@ -109,7 +110,9 @@ class Swarm extends events.EventEmitter {
   }
 
   onPeer(peer) {
-    console.log('peer', peer);
+    if (this.debug) {
+      console.log('peer', peer);
+    }
     if (this._peers.has(peer.id) || peer.id === this.id) {
       // already connected, or self
       return;
@@ -135,7 +138,9 @@ class Swarm extends events.EventEmitter {
         const peerStream = await peer.stream();
         const replStream = this._stream(peer);
         const connection = pump(peerStream, replStream, peerStream, (err) => {
-          console.error('stream error', err);
+          if (this.debug) {
+            console.error('stream error', err);
+          }
           this.connections.delete(peer.id)
           if (peer.retries < RECONNECT_WAIT.length && this._peers.has(peer.id)) {
             setTimeout(connectPeer, RECONNECT_WAIT[peer.retries]);
@@ -144,11 +149,13 @@ class Swarm extends events.EventEmitter {
             this.totalConnections -= 1;
           }
         });
-        replStream.on('handshake', () => console.log('handshaked', this.id));
-        replStream.on('feed', (f) => console.log('feed', this.id, f.toString('hex')));
-        peerStream.on('close', () => console.log('stream closed'));
-        peerStream.on('error', (err) => console.error('stream error', err));
-        replStream.on('error', (err) => console.error('repl error', err));
+        if (this.debug) {
+          replStream.on('handshake', () => console.log('handshaked', this.id));
+          replStream.on('feed', (f) => console.log('feed', this.id, f.toString('hex')));
+          peerStream.on('close', () => console.log('stream closed'));
+          peerStream.on('error', (err) => console.error('stream error', err));
+          replStream.on('error', (err) => console.error('repl error', err));
+        }
         this.connections.set(peer.id, connection);
       }
       connectPeer();
