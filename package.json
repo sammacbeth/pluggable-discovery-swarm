@@ -1,5 +1,5 @@
 {
-  "name": "discovery-swarm",
+  "name": "@sammacbeth/discovery-swarm",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
