@@ -5,9 +5,9 @@ Enables multiple different _introductors_, _announcers_ and _transports_ to be s
 and used to discover and connect to peers.
 
 Currently implements:
- * Dat Gateway introducer: peers with [dat-gateway] servers over Websockets (web + node).
- * TCP Transport for webextensions: Connect with peers over TCP, using [libdweb] (webextensions).
- * LanDiscovery: Announce and discover peers on LAN, using [libdweb] (webextensions).
+ * Dat Gateway introducer: peers with [dat-gateway](https://github.com/RangerMauve/dat-gateway) servers over Websockets (web + node).
+ * TCP Transport for webextensions: Connect with peers over TCP, using [libdweb](https://github.com/mozilla/libdweb) (webextensions).
+ * LanDiscovery: Announce and discover peers on LAN, using [libdweb](https://github.com/mozilla/libdweb) (webextensions).
 
 ## Usage
 
