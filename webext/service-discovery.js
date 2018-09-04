@@ -9,7 +9,7 @@ class LanDiscovery extends events.EventEmitter {
     this.announced = new Map();
     this.self = {};
   }
-  
+
   async join(discoveryKey, opts) {
     const key = discoveryKey.toString('hex');
     if (this.joined.has(key)) {
@@ -17,11 +17,27 @@ class LanDiscovery extends events.EventEmitter {
     }
     this.joined.add(key);
 
+    if (this.announce && opts.transport.tcp.port && !this.announced.has(key)) {
+      const discovery = browser.ServiceDiscovery.announce({
+        name: key,
+        type: 'dat',
+        protocol: 'tcp',
+        port: opts.transport.tcp.port,
+      });
+      discovery.then((service) => {
+        this.self.host = service.host;
+        this.self.port = service.port;
+        this.announced.set(key, service);
+        console.log('announced service', service);
+      });
+    }
+
     const services = browser.ServiceDiscovery.discover({
       type: 'dat',
       protocol: 'tcp',
     });
     for await (const service of services) {
+      console.log('saw service', service);
       if (!this.joined.has(key)) {
         break;
       }
@@ -38,21 +54,6 @@ class LanDiscovery extends events.EventEmitter {
           type: 'tcp',
         });
       }
-    }
-    
-    if (this.announce && opts.transport.tcp.port && !this.announced.has(key)) {
-      const discovery = browser.ServiceDiscovery.announce({
-        name: key,
-        type: 'dat',
-        protocol: 'tcp',
-        port: opts.transport.tcp.port,
-      });
-      discovery.then((service) => {
-        this.self.host = service.host;
-        this.self.port = service.port;
-        this.announced.set(key, service);
-        console.log('announced service', service);
-      });
     }
   }
 

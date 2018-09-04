@@ -70,7 +70,7 @@ class Swarm extends events.EventEmitter {
     }
     this._joined.add(discoveryKey);
 
-    // look for gateway peers immediately
+    // ask introducers for peers
     this.introducers.forEach((introducer) => {
       introducer.join(name, opts);
     });
