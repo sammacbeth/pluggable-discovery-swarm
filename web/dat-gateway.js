@@ -9,14 +9,16 @@ class DatGatewayIntroducer extends events.EventEmitter {
 
   join(discoveryKey, opts) {
     if (opts.key) {
-      const gatewayUrl = `${this.gateways[0]}/${opts.key.toString('hex')}`;
-      const peer = {
-        id: gatewayUrl,
-        channel: discoveryKey,
-        retries: 0,
-        stream: () => Websocket(gatewayUrl),
-      }
-      this.emit('peer', peer);
+      this.gateways.forEach((gateway) => {
+        const gatewayUrl = `${gateway}/${opts.key.toString('hex')}`;
+        const peer = {
+          id: gatewayUrl,
+          channel: discoveryKey,
+          retries: 0,
+          stream: () => Websocket(gatewayUrl),
+        }
+        this.emit('peer', peer);
+      })
     }
   }
 

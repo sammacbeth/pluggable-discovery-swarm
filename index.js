@@ -150,11 +150,11 @@ class Swarm extends events.EventEmitter {
           }
         });
         if (this.debug) {
-          replStream.on('handshake', () => console.log('handshaked', this.id));
-          replStream.on('feed', (f) => console.log('feed', this.id, f.toString('hex')));
+          replStream.on('handshake', () => console.log('handshaked', peer.id));
+          replStream.on('feed', (f) => console.log('feed', peer.id, f.toString('hex')));
           peerStream.on('close', () => console.log('stream closed'));
-          peerStream.on('error', (err) => console.error('stream error', err));
-          replStream.on('error', (err) => console.error('repl error', err));
+          peerStream.on('error', (err) => console.error('stream error', peer.id, err));
+          replStream.on('error', (err) => console.error('repl error', peer.id, err));
         }
         this.connections.set(peer.id, connection);
       }

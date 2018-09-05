@@ -29,9 +29,9 @@ class TCPTransport extends events.EventEmitter {
   }
 
   async connect({ host, port }) {
+    console.log('connect to', host, port);
     const socket = await browser.TCPSocket.connect({ host, port })
     await socket.opened;
-    console.log('connected', socket);
     return new SocketStream(socket);
   }
 }

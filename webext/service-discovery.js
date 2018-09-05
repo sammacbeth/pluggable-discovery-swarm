@@ -52,6 +52,7 @@ class LanDiscovery extends events.EventEmitter {
           port: service.port,
           channel: discoveryKey,
           type: 'tcp',
+          retries: 2,
         });
       }
     }
