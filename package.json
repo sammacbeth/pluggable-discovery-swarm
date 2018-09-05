@@ -1,12 +1,12 @@
 {
   "name": "@sammacbeth/discovery-swarm",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test:build": "browserify -r fs:graceful-fs -e ./test/test-web.js > ./test/test-bundle.js",
     "test:webext": "env MOZ_DISABLE_CONTENT_SANDBOX=1 web-ext run -s ./test --firefox=nightly --no-reload",
-    "postinstall": "mkdir -p test/vendor && cp node_modules/mocha/mocha.css test/vendor/"
+    "test:vendor": "mkdir -p test/vendor && cp node_modules/mocha/mocha.css test/vendor/"
   },
   "author": "",
   "license": "ISC",
