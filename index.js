@@ -20,7 +20,6 @@ class Swarm extends events.EventEmitter {
 
     this._joined = new Set();
     this._peers = new Map();
-    this.connections = new Map();
 
     this._onPeer = this.onPeer.bind(this);
     this.introducers = opts.introducers || [];
@@ -113,9 +112,19 @@ class Swarm extends events.EventEmitter {
     if (this.debug) {
       console.log('peer', peer);
     }
-    if (this._peers.has(peer.id) || peer.id === this.id) {
+    if (peer.id === this.id) {
+      return
+    }
+    if (this._peers.has(peer.id)) {
       // already connected, or self
-      return;
+      const existingPeer = this._peers.get(peer.id);
+      if (existingPeer.connection && existingPeer.replStream) {
+        // already connected - emit the channel
+        existingPeer.replStream.emit('feed', peer.channel)
+        return;
+      } else if (peer.retries === 0) {
+        return;
+      }
     }
     if (this.maxConnections > 0 && this.totalConnections >= this.maxConnections) {
       return;
@@ -132,22 +141,30 @@ class Swarm extends events.EventEmitter {
         return await this._options.transport[peer.type].connect(peer);
       };
     }
+    peer.retries = peer.retries || 4;
 
     if (peer.stream && this._stream) {
       const connectPeer = async () => {
         const peerStream = await peer.stream();
+        this.totalConnections += 1;
         const replStream = this._stream(peer);
-        const connection = pump(peerStream, replStream, peerStream, (err) => {
+        peer.replStream = replStream;
+        peer.connection = pump(peerStream, replStream, peerStream, (err) => {
           if (this.debug) {
             console.error('stream error', err);
           }
-          this.connections.delete(peer.id)
+          peer.connection = null;
+          peer.replStream = null;
           if (peer.retries < RECONNECT_WAIT.length && this._peers.has(peer.id)) {
             setTimeout(connectPeer, RECONNECT_WAIT[peer.retries]);
             peer.retries += 1;
           } else {
+            // TODO temp ban?
             this.totalConnections -= 1;
           }
+        });
+        peerStream.on('end', () => {
+          peer.connection = null;
         });
         if (this.debug) {
           replStream.on('handshake', () => console.log('handshaked', peer.id));
@@ -156,10 +173,8 @@ class Swarm extends events.EventEmitter {
           peerStream.on('error', (err) => console.error('stream error', peer.id, err));
           replStream.on('error', (err) => console.error('repl error', peer.id, err));
         }
-        this.connections.set(peer.id, connection);
       }
       connectPeer();
-      this.totalConnections += 1;
     }
   }
 
