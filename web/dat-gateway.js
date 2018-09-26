@@ -2,23 +2,29 @@ const Websocket = require('websocket-stream');
 const events = require('events')
 
 class DatGatewayIntroducer extends events.EventEmitter {
-  constructor(servers) {
+  constructor(server, multiplexStream = false) {
     super();
-    this.gateways = servers;
+    this.gateway = server;
+    this.multiplexStream = multiplexStream;
   }
 
-  join(discoveryKey, opts) {
+  async join(discoveryKey, opts) {
     if (opts.key) {
-      this.gateways.forEach((gateway) => {
-        const gatewayUrl = `${gateway}/${opts.key.toString('hex')}`;
-        const peer = {
-          id: gatewayUrl,
-          channel: discoveryKey,
-          retries: 0,
-          stream: () => Websocket(gatewayUrl),
-        }
-        this.emit('peer', peer);
-      })
+      const gatewayUrl = `${this.gateway}/${opts.key.toString('hex')}`;
+      const peer = {
+        id: this.multiplexStream ? this.gateway : gatewayUrl,
+        channel: discoveryKey,
+        retries: 0,
+        stream: () => Websocket(gatewayUrl),
+      }
+      if (this.multiplexStream) {
+        // ping gateway to load feed
+        await fetch(`${gatewayUrl.replace('ws:', 'http:').replace('wss:', 'https')}/`, {
+          credentials: 'omit',
+          method: 'HEAD',
+        });
+      }
+      this.emit('peer', peer);
     }
   }
 
