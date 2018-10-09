@@ -6,18 +6,19 @@ const chai = require('chai');
 const disc = require('../');
 const DatGatewayIntroducer = require('../web/dat-gateway');
 const TCPTransport = require('../webext/tcp-transport');
+const WebRTCTransport = require('../web/webrtc-transport');
 const LanDiscovery = require('../webext/service-discovery');
 
 mocha.setup('bdd');
 const expect = chai.expect;
 
-function createNetwork(archive, opts, cb) {
+async function createNetwork(archive, opts, cb) {
   const swarmOpts = Object.assign({
     hash: false,
     stream: opts.stream,
   }, opts);
   const swarm = disc(swarmOpts);
-  swarm.listen(opts.port);
+  await swarm.listen(opts.port);
   swarm.join(archive.discoveryKey, {
     announce: !(opts.upload === false),
     key: archive.key,
@@ -108,12 +109,50 @@ describe('hyperdrive replication', () => {
         sparse: true,
         introducers: [new DatGatewayIntroducer(gatewayServers)],
       };
-      network = setupNetwork(archive, opts);
+      network = await setupNetwork(archive, opts);
       await waitForMetadata(archive);
 
       return testReplicated(archive);
     });
   });
+
+  async function selfReplicationTest(net1, net2, emitPeers) {
+    // create a hyperdrive
+    archive = await createHyperDrive();
+
+    // setup archive to get full hyperdrive contents
+    network = await setupNetwork(archive, net1);
+
+    const data = 'hello world';
+    await new Promise((res, rej) => {
+      archive.writeFile('test.txt', data, (err) => {
+        if (err) {
+          rej(err);
+        } else {
+          res();
+        }
+      });
+    });
+
+    const archive2 = await createHyperDrive(archive.key.toString('hex'));
+    const network2 = await setupNetwork(archive2, net2);
+    const ready = waitForMetadata(archive2);
+
+    await testReplicated(archive, 'test.txt');
+
+    // get address of network1 server and emit as peer to network2
+    emitPeers(network, network2);
+
+    await ready
+    await testReplicated(archive2, 'test.txt');
+    await new Promise((resolve, reject) => {
+      archive2.readFile('/test.txt', 'utf-8', (err, contents) => {
+        if (err) reject(err);
+        expect(contents).to.equal(data);
+        resolve();
+      });
+    });
+  }
 
   context('TCPSocket replication', () => {
 
@@ -128,7 +167,7 @@ describe('hyperdrive replication', () => {
         },
       };
 
-      network = setupNetwork(archive, opts);
+      network = await setupNetwork(archive, opts);
       setTimeout(() => {
         network.emit('peer', {
           id: 'dat-node',
@@ -143,58 +182,51 @@ describe('hyperdrive replication', () => {
       return testReplicated(archive);
     });
 
-    it('replicates to itself', async function () {
+    it('replicates to itself', function () {
       this.timeout(5000);
-
-      // create a hyperdrive
-      archive = await createHyperDrive();
-
-      // setup archive to get full hyperdrive contents
-      network = setupNetwork(archive, {
+      return selfReplicationTest({
         transport: {
           tcp: new TCPTransport(),
         },
-      });
-
-      const data = 'hello world';
-      await new Promise((res, rej) => {
-        archive.writeFile('test.txt', data, (err) => {
-          if (err) {
-            rej(err);
-          } else {
-            res();
-          }
-        });
-      });
-
-      const archive2 = await createHyperDrive(archive.key.toString('hex'));
-      const network2 = setupNetwork(archive2, {
+      }, {
         sparse: true,
         transport: {
           tcp: new TCPTransport(),
         }
+      }, (network, network2) => {
+        network2.emit('peer', {
+          id: 'network1',
+          host: 'localhost',
+          port: network._servers.tcp.port,
+          type: 'tcp',
+          channel: archive.discoveryKey,
+          retries: 0,
+        });
       });
-      const ready = waitForMetadata(archive2);
+    });
+  });
 
-      await testReplicated(archive, 'test.txt');
+  context('WebRTC Replication', () => {
 
-      // get address of network1 server and emit as peer to network2
-      network2.emit('peer', {
-        id: 'network1',
-        host: 'localhost',
-        port: network._servers.tcp.port,
-        type: 'tcp',
-        channel: archive.discoveryKey,
-        retries: 0,
-      });
-
-      await ready
-      await testReplicated(archive2, 'test.txt');
-      await new Promise((resolve, reject) => {
-        archive2.readFile('/test.txt', 'utf-8', (err, contents) => {
-          if (err) reject(err);
-          expect(contents).to.equal(data);
-          resolve();
+    it('replicates to itself', async function () {
+      this.timeout(5000);
+      const t1 = new WebRTCTransport();
+      const t2 = new WebRTCTransport();
+      return selfReplicationTest({
+        transport: {
+          webrtc: t1,
+        },
+      }, {
+        sparse: true,
+        transport: {
+          webrtc: t2,
+        }
+      }, (network1, network2) => {
+        t2.on('signal', (s) => t1._peer.signal(s))
+        network2.emit('peer', {
+          id: 'network1',
+          offer: network1._servers.webrtc.offer,
+          type: 'webrtc',
         });
       });
     });
