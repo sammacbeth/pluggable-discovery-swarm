@@ -121,7 +121,6 @@ class Swarm extends events.EventEmitter {
       if (existingPeer.connection && existingPeer.replStream) {
         // already connected - emit the channel
         existingPeer.replStream.emit('feed', peer.channel)
-        return;
       } else if (peer.retries === 0) {
         return;
       }
