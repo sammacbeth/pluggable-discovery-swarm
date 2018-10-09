@@ -103,7 +103,7 @@ describe('hyperdrive replication', () => {
 
     it('replicates', async function () {
       this.timeout(5000);
-      const gatewayServers = ['ws://macbeth.cc:3000'];
+      const gatewayServers = ['ws://gateway.mauve.moe:3000'];
       const opts = {
         sparse: true,
         introducers: [new DatGatewayIntroducer(gatewayServers)],
@@ -132,7 +132,7 @@ describe('hyperdrive replication', () => {
       setTimeout(() => {
         network.emit('peer', {
           id: 'dat-node',
-          host: 'localhost',
+          host: 'macbeth.cc',
           port: 3282,
           type: 'tcp',
           channel: archive.discoveryKey,
@@ -227,7 +227,7 @@ describe('hyperdrive replication', () => {
       introducer.on('peer', (peer) => {
         console.log('peer', peer);
         chai.expect(peer.port).to.equal(3154);
-        chai.expect(peer.channel).to.equal(archive.discoveryKey);
+        chai.expect(peer.channel).to.eql(archive.discoveryKey);
         done();
       });
       introducer.join(archive.discoveryKey);

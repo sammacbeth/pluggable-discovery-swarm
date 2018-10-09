@@ -57,7 +57,7 @@ class Swarm extends events.EventEmitter {
   }
 
   get connected() {
-    return this.connections.size;
+    return this._peers.size;
   }
 
   join(name, opts, cb) {
@@ -80,8 +80,8 @@ class Swarm extends events.EventEmitter {
     this._joined.delete(key);
     for (const [id, peer] of this._peers.entries()) {
       if (peer.channel && peer.channel.toString('hex') === key) {
-        if (this.connections.has(id)) {
-          this.connections.get(id).destroy();
+        if (peer.connection) {
+          peer.connection.destroy();
         }
         this._peers.delete(id);
       }
