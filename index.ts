@@ -2,6 +2,7 @@ import { Stream, Duplex } from "stream";
 import { EventEmitter } from "events";
 import { randomBytes } from "crypto";
 import * as pump from "pump";
+import * as hypercoreProtocol from 'hypercore-protocol';
 
 const RECONNECT_WAIT = [1000, 1000, 5000, 15000]
 
@@ -10,9 +11,10 @@ export interface TransportMap {
 }
 
 export interface JoinOptions {
-  id: string
+  id: Buffer
   announce: boolean
-  transport: TransportMap, 
+  transport: TransportMap
+  key?: Buffer
 }
 
 export interface SwarmOptions extends JoinOptions {
@@ -57,7 +59,7 @@ export interface Peer extends Partial<Address> {
 export class Swarm extends EventEmitter {
 
   debug: boolean
-  id: string
+  id: Buffer
   maxConnections: number
   totalConnections: number
   introducers: Introducer[]
@@ -72,7 +74,7 @@ export class Swarm extends EventEmitter {
     super();
     if (!opts) opts = {};
     this.debug = opts.debug;
-    this.id = opts.id || (randomBytes(32)).toString('hex');
+    this.id = opts.id || randomBytes(32);
 
     this.maxConnections = opts.maxConnections || 0;
     this.totalConnections = 0;
@@ -154,7 +156,7 @@ export class Swarm extends EventEmitter {
     });
   }
 
-  async listen(port, onlistening) {
+  async listen(port?: number, onlistening?: () => void) {
     if (this._options.transport) {
       await Promise.all(Object.keys(this._options.transport).map((name) => {
         return this._options.transport[name].listen(port).then((server) => {
@@ -173,9 +175,6 @@ export class Swarm extends EventEmitter {
   onPeer(peer: Peer) {
     if (this.debug) {
       console.log('peer', peer);
-    }
-    if (peer.id === this.id) {
-      return
     }
     if (this._peers.has(peer.id)) {
       // already connected, or self
@@ -242,7 +241,84 @@ export class Swarm extends EventEmitter {
       connectPeer();
     }
   }
+}
 
+interface ReplicationOptions {
+  live?: boolean
+  stream?: Duplex
+}
+
+export interface HypercoreLike {
+  key: Buffer
+  discoveryKey: Buffer
+  replicate: (opts?: ReplicationOptions) => Duplex
+  ready: (callback: () => void) => void
+}
+
+export class MultiSwarm {
+
+  swarm: Swarm
+  archives: Map<string, HypercoreLike>
+
+  constructor(opts?: Partial<SwarmOptions>) {
+    this.swarm = new Swarm(Object.assign({
+      hash: false,
+      stream: this.replicate.bind(this),
+    }, opts));
+    this.archives = new Map();
+  }
+
+  listen(port?: number) {
+    return this.swarm.listen(port);
+  }
+
+  add(archive: HypercoreLike) {
+    archive.ready(() => {
+      const key = archive.discoveryKey.toString('hex');
+      this.archives.set(key, archive);
+      this.swarm.join(archive.discoveryKey, {
+        key: archive.key,
+      });
+    });
+  }
+
+  remove(archive: HypercoreLike) {
+    const key = archive.discoveryKey.toString('hex');
+    this.archives.delete(key);
+    this.swarm.leave(archive.discoveryKey);
+  }
+
+  replicate(opts: Peer) : Duplex {
+    const stream: Duplex = hypercoreProtocol({
+      live: true,
+      id: this.swarm.id,
+      encrypt: true
+    });
+
+    const add = (dk: Buffer) => {
+      const key = dk.toString('hex');
+      console.log('feed', key);
+      if (!this.archives.has(key)) {
+        return;
+      }
+      const archive = this.archives.get(key);
+      archive.replicate({
+        live: true,
+        stream,
+      });
+    };
+
+    stream.on('feed', add);
+    if (opts.channel) {
+      add(opts.channel);
+    }
+
+    return stream;
+  }
+
+  destroy() {
+    this.swarm.destroy();
+  }
 }
 
 export default (...args) => new Swarm(...args);
