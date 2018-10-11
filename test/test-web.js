@@ -3,7 +3,7 @@ const ram = require('random-access-memory');
 const mocha = require('mocha').mocha;
 const chai = require('chai');
 
-const disc = require('../');
+const disc = require('../').default;
 const DatGatewayIntroducer = require('../web/dat-gateway');
 const TCPTransport = require('../webext/tcp-transport');
 const WebRTCTransport = require('../web/webrtc-transport');
@@ -197,7 +197,7 @@ describe('hyperdrive replication', () => {
         network2.emit('peer', {
           id: 'network1',
           host: 'localhost',
-          port: network._servers.tcp.port,
+          port: network._servers.get('tcp').port,
           type: 'tcp',
           channel: archive.discoveryKey,
           retries: 0,
@@ -225,7 +225,7 @@ describe('hyperdrive replication', () => {
         t2.on('signal', (s) => t1._peer.signal(s))
         network2.emit('peer', {
           id: 'network1',
-          offer: network1._servers.webrtc.offer,
+          offer: network1._servers.get('webrtc').offer,
           type: 'webrtc',
         });
       });

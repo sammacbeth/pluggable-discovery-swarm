@@ -1,22 +1,84 @@
-const events = require('events')
-const crypto = require('crypto')
-const pump = require('pump');
+import { Stream, Duplex } from "stream";
+import { EventEmitter } from "events";
+import { randomBytes } from "crypto";
+import * as pump from "pump";
 
 const RECONNECT_WAIT = [1000, 1000, 5000, 15000]
 
-class Swarm extends events.EventEmitter {
-  constructor(opts) {
+export interface TransportMap {
+  [type: string]: Transport
+}
+
+export interface JoinOptions {
+  id: string
+  announce: boolean
+  transport: TransportMap, 
+}
+
+export interface SwarmOptions extends JoinOptions {
+  debug: boolean
+  maxConnections: number
+  stream: (peer: Peer) => Duplex
+  introducers: Introducer[]
+  transport: TransportMap
+}
+
+export interface Introducer extends EventEmitter {
+  join(key: Buffer, opts?: Partial<JoinOptions>)
+  leave(key: Buffer)
+}
+
+export interface Server {
+  port: number
+  close: () => void
+}
+
+export interface Address {
+  host: string
+  port: number
+}
+
+export interface Transport extends EventEmitter {
+  listen(port?: number) : Promise<Server>
+  connect(address: Address) : Promise<Duplex>
+  port?: number
+}
+
+export interface Peer extends Partial<Address> {
+  id: string
+  channel?: Buffer
+  connection?: Duplex
+  replStream?: Duplex
+  retries?: number
+  stream?: () => Promise<Duplex>
+  type?: string
+}
+
+export class Swarm extends EventEmitter {
+
+  debug: boolean
+  id: string
+  maxConnections: number
+  totalConnections: number
+  introducers: Introducer[]
+  _joined: Set<string>
+  _options: Partial<SwarmOptions>
+  _stream?: (peer: Peer) => Duplex
+  _peers: Map<string, Peer>
+  _onPeer: (peer: Peer) => void
+  _servers: Map<string, Server>
+
+  constructor(opts?: Partial<SwarmOptions>) {
     super();
     if (!opts) opts = {};
     this.debug = opts.debug;
-    this.id = opts.id || crypto.randomBytes(32);
+    this.id = opts.id || (randomBytes(32)).toString('hex');
 
     this.maxConnections = opts.maxConnections || 0;
     this.totalConnections = 0;
 
     this._stream = opts.stream;
     this._options = opts;
-    this._listening = false;
 
     this._joined = new Set();
     this._peers = new Map();
@@ -26,41 +88,41 @@ class Swarm extends events.EventEmitter {
     this.introducers.forEach((introducer) => {
       introducer.on('peer', this._onPeer);
     });
-    this._servers = {};
+    this._servers = new Map();
 
     this.on('peer', this.onPeer.bind(this));
   }
 
-  close(onclose) {
-    return this.destroy(onclose);
+  close() {
+    return this.destroy();
   }
 
-  destroy(onclose) {
+  destroy() {
     this.introducers.forEach((introducer) => {
       introducer.removeListener('peer', this._onPeer);
     });
     this._joined.forEach((key) => {
       this.leave(Buffer.from(key, 'hex'));
-    })
-    Object.keys(this._servers).forEach((type) => {
-      this._servers[type].close();
+    });
+    this._servers.forEach((server, type) => {
+      server.close();
       this._options.transport[type].removeListener('connection', this._onPeer);
     });
   }
 
-  get queued() {
+  get queued(): number {
     return 0;
   }
 
-  get connecting() {
+  get connecting(): number {
     return this.totalConnections - this.connected;
   }
 
-  get connected() {
+  get connected(): number {
     return this._peers.size;
   }
 
-  join(name, opts, cb) {
+  join(name: Buffer, opts: Partial<SwarmOptions>) {
     opts = Object.assign(opts, this._options);
     const discoveryKey = name.toString('hex');
     if (this._joined.has(discoveryKey)) {
@@ -75,7 +137,7 @@ class Swarm extends events.EventEmitter {
     });
   }
 
-  leave(name) {
+  leave(name: Buffer) {
     const key = name.toString('hex');
     this._joined.delete(key);
     for (const [id, peer] of this._peers.entries()) {
@@ -99,7 +161,7 @@ class Swarm extends events.EventEmitter {
           if (this.debug) {
             console.log(`${name} server listening on ${server.port}`);
           }
-          this._servers[name] = server;
+          this._servers.set(name, server);
           this._options.transport[name].port = server.port;
           this._options.transport[name].on('connection', this._onPeer);
         });
@@ -108,7 +170,7 @@ class Swarm extends events.EventEmitter {
     onlistening && onlistening();
   }
 
-  onPeer(peer) {
+  onPeer(peer: Peer) {
     if (this.debug) {
       console.log('peer', peer);
     }
@@ -136,8 +198,12 @@ class Swarm extends events.EventEmitter {
     this._peers.set(peer.id, peer);
     // when peer stream is not provided by the discoverer, find a transport that can make the connection
     if (!peer.stream && peer.type && this._options.transport[peer.type]) {
+      const address: Address = {
+        host: peer.host,
+        port: peer.port,
+      };
       peer.stream = async () => {
-        return await this._options.transport[peer.type].connect(peer);
+        return await this._options.transport[peer.type].connect(address);
       };
     }
     peer.retries = peer.retries || 4;
@@ -179,4 +245,4 @@ class Swarm extends events.EventEmitter {
 
 }
 
-module.exports = (...args) => new Swarm(...args);
+export default (...args) => new Swarm(...args);

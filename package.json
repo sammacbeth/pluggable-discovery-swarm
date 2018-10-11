@@ -6,7 +6,8 @@
   "scripts": {
     "test:build": "browserify -r fs:graceful-fs -e ./test/test-web.js > ./test/test-bundle.js",
     "test:webext": "env MOZ_DISABLE_CONTENT_SANDBOX=1 web-ext run -s ./test --firefox=/opt/firefox_62/firefox --no-reload",
-    "test:vendor": "mkdir -p test/vendor && cp node_modules/mocha/mocha.css test/vendor/"
+    "test:vendor": "mkdir -p test/vendor && cp node_modules/mocha/mocha.css test/vendor/",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
@@ -17,11 +18,13 @@
   },
   "devDependencies": {
     "@sammacbeth/libdweb": "0.0.2",
+    "@types/node": "^10.11.7",
     "browserify": "^16.2.2",
     "chai": "^4.1.2",
     "hyperdrive": "^9.14.0",
     "mocha": "^5.2.0",
     "random-access-memory": "^3.0.0",
+    "typescript": "^3.1.2",
     "web-ext": "^2.8.0"
   }
 }
