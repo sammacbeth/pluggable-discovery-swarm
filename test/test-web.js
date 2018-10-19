@@ -3,11 +3,11 @@ const ram = require('random-access-memory');
 const mocha = require('mocha').mocha;
 const chai = require('chai');
 
-const disc = require('../').default;
-const DatGatewayIntroducer = require('../web/dat-gateway');
-const TCPTransport = require('../webext/tcp-transport');
-const WebRTCTransport = require('../web/webrtc-transport');
-const LanDiscovery = require('../webext/service-discovery');
+const disc = require('@sammacbeth/discovery-swarm').default;
+const DatGatewayIntroducer = require('@sammacbeth/discovery-swarm-web/dat-gateway');
+const TCPTransport = require('@sammacbeth/discovery-swarm-webext/tcp-transport');
+const WebRTCTransport = require('@sammacbeth/discovery-swarm-web/webrtc-transport');
+const LanDiscovery = require('@sammacbeth/discovery-swarm-webext/service-discovery');
 
 mocha.setup('bdd');
 const expect = chai.expect;
@@ -263,7 +263,7 @@ describe('hyperdrive replication', () => {
         done();
       });
       introducer.join(archive.discoveryKey);
-    });    
+    });
   });
 
 });

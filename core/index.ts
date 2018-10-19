@@ -1,4 +1,4 @@
-import { Stream, Duplex } from "stream";
+import { Duplex } from "stream";
 import { EventEmitter } from "events";
 import { randomBytes } from "crypto";
 import * as pump from "pump";

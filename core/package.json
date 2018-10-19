@@ -1,0 +1,19 @@
+{
+  "name": "@sammacbeth/discovery-swarm",
+  "version": "0.0.5",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hypercore-protocol": "^6.7.1",
+    "pump": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^10.11.7",
+    "typescript": "^3.1.2"
+  }
+}
