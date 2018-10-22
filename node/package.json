@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@hyperswarm/network": "0.0.3",
-    "@sammacbeth/discovery-swarm-ts": "0.0.5"
+    "@sammacbeth/discovery-swarm": "../core",
+    "dat-swarm-defaults": "^1.0.1",
+    "discovery-channel": "^5.5.1"
   }
 }

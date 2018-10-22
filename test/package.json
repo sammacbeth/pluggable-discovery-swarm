@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@sammacbeth/discovery-swarm": "../core",
+    "@sammacbeth/discovery-swarm-node": "../node",
     "@sammacbeth/discovery-swarm-web": "../web",
     "@sammacbeth/discovery-swarm-webext": "../webext",
     "@sammacbeth/libdweb": "0.0.2",

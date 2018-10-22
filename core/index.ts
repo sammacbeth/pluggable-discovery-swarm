@@ -54,6 +54,7 @@ export interface Peer extends Partial<Address> {
   retries?: number
   stream?: () => Promise<Duplex>
   type?: string
+  mtime?: number
 }
 
 export class Swarm extends EventEmitter {
@@ -182,7 +183,7 @@ export class Swarm extends EventEmitter {
       if (existingPeer.connection && existingPeer.replStream) {
         // already connected - emit the channel
         existingPeer.replStream.emit('feed', peer.channel)
-      } else if (peer.retries === 0) {
+      } else if (existingPeer.retries === 0 || Date.now() - existingPeer.mtime < 60000) {
         return;
       }
     }
@@ -209,13 +210,14 @@ export class Swarm extends EventEmitter {
 
     if (peer.stream && this._stream) {
       const connectPeer = async () => {
+        peer.mtime = Date.now();
         const peerStream = await peer.stream();
         this.totalConnections += 1;
         const replStream = this._stream(peer);
         peer.replStream = replStream;
         peer.connection = pump(peerStream, replStream, peerStream, (err) => {
           if (this.debug) {
-            console.error('stream error', err);
+            console.error('stream error', err, peer.id);
           }
           peer.connection = null;
           peer.replStream = null;

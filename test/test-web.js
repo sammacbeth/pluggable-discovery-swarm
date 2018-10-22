@@ -3,59 +3,14 @@ const ram = require('random-access-memory');
 const mocha = require('mocha').mocha;
 const chai = require('chai');
 
-const disc = require('@sammacbeth/discovery-swarm').default;
 const DatGatewayIntroducer = require('@sammacbeth/discovery-swarm-web/dat-gateway');
 const TCPTransport = require('@sammacbeth/discovery-swarm-webext/tcp-transport');
 const WebRTCTransport = require('@sammacbeth/discovery-swarm-web/webrtc-transport');
 const LanDiscovery = require('@sammacbeth/discovery-swarm-webext/service-discovery');
+const { setupNetwork, createHyperDrive, waitForMetadata } = require('./utils');
 
 mocha.setup('bdd');
 const expect = chai.expect;
-
-async function createNetwork(archive, opts, cb) {
-  const swarmOpts = Object.assign({
-    hash: false,
-    stream: opts.stream,
-  }, opts);
-  const swarm = disc(swarmOpts);
-  await swarm.listen(opts.port);
-  swarm.join(archive.discoveryKey, {
-    announce: !(opts.upload === false),
-    key: archive.key,
-  }, cb);
-  return swarm;
-};
-
-function setupNetwork(archive, opts) {
-  const netOpts = Object.assign({
-    stream: () => {
-      const stream = archive.replicate({
-        upload: true,
-        download: true,
-        live: true,
-      });
-      return stream;
-    }
-  }, opts);
-  return createNetwork(archive, netOpts);
-}
-
-async function createHyperDrive(key) {
-  archive = hyperdrive(ram, key);
-  await new Promise((resolve) => {
-    archive.ready(resolve);
-  })
-  return archive;
-}
-
-async function waitForMetadata(archive) {
-  await new Promise((resolve, reject) => {
-    archive.metadata.update(err => {
-      if (err) reject(err)
-      else resolve()
-    })
-  });
-}
 
 async function testReplicated(archive, testFile = 'dat.json') {
   return new Promise((resolve, reject) => {
@@ -171,7 +126,7 @@ describe('hyperdrive replication', () => {
       setTimeout(() => {
         network.emit('peer', {
           id: 'dat-node',
-          host: 'macbeth.cc',
+          host: 'localhost',
           port: 3282,
           type: 'tcp',
           channel: archive.discoveryKey,

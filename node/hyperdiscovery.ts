@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { Socket } from "net";
-import { Introducer, JoinOptions, Peer } from "@sammacbeth/discovery-swarm-ts";
+import { Introducer, JoinOptions, Peer } from "@sammacbeth/discovery-swarm";
 import * as Discovery from "@hyperswarm/discovery";
 
 export interface SwarmOptions {
@@ -48,6 +48,7 @@ export default class HyperDiscovery extends EventEmitter implements Introducer {
           type: 'tcp',
         };
         this.emit('peer', peerInfo);
+        this.network.holepunch(peer);
       });
       this.topics.set(key, topic);
     }
