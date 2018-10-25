@@ -1,9 +1,8 @@
-import { randomBytes } from "crypto";
 import * as Peer from "simple-peer";
 import * as Signalhub from "signalhub";
 import { Introducer, JoinOptions } from "@sammacbeth/discovery-swarm";
 import { EventEmitter } from "events";
-import { Stream, Readable } from "stream";
+import { Readable } from "stream";
 
 
 export default class SignalHubIntroducer extends EventEmitter implements Introducer {

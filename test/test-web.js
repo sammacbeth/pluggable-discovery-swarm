@@ -1,14 +1,12 @@
-const hyperdrive = require('hyperdrive');
-const ram = require('random-access-memory');
 const mocha = require('mocha').mocha;
 const chai = require('chai');
 
 const DatGatewayIntroducer = require('@sammacbeth/discovery-swarm-web/dat-gateway');
 const TCPTransport = require('@sammacbeth/discovery-swarm-webext/tcp-transport');
 const SignalHubIntroducer = require('@sammacbeth/discovery-swarm-web/signalhub').default;
+const WebRTCTransport = require('@sammacbeth/discovery-swarm-web/webrtc-transport').default;
 const LanDiscovery = require('@sammacbeth/discovery-swarm-webext/service-discovery');
 const { setupNetwork, createHyperDrive, waitForMetadata } = require('./utils');
-const signalhub = require('signalhub');
 
 mocha.setup('bdd');
 const expect = chai.expect;
@@ -162,7 +160,7 @@ describe('hyperdrive replication', () => {
     });
   });
 
-  context('WebRTC Replication', () => {
+  context('Signalhub Webrtc Replication', () => {
 
     const signalServers = [
       'https://signal.dat-web.eu',
@@ -204,6 +202,61 @@ describe('hyperdrive replication', () => {
       await waitForMetadata(archive);
       return testReplicated(archive);
     });
+  });
+
+  context('WebrtcTransport Replication', () => {
+
+    const signalServers = [
+      'https://signal.dat-web.eu',
+    ];
+
+    it('replicates to itself', async function () {
+      this.timeout(5000);
+      const t1 = new WebRTCTransport(signalServers, { trickle: false });
+      const t2 = new WebRTCTransport(signalServers, { trickle: false });
+      return selfReplicationTest({
+        transport: {
+          webrtc: t1,
+        },
+      }, {
+        sparse: true,
+        transport: {
+          webrtc: t2,
+        }
+      }, (n1, n2) => {
+        n2.emit('peer', {
+          id: t1.address,
+          type: 'webrtc',
+          channel: archive.discoveryKey,
+        });
+      });
+    });
+
+    it('replicates to a node server', async function () {
+      this.timeout(5000);
+
+      archive = await createHyperDrive(key);
+      const webrtc = new WebRTCTransport(signalServers, { trickle: false });
+      const opts = {
+        debug: true,
+        sparse: true,
+        transport: {
+          webrtc,
+        },
+      };
+
+      network = await setupNetwork(archive, opts);
+      setTimeout(() => {
+        network.emit('peer', {
+          id: Buffer.from('dat-node-test').toString('hex'),
+          type: 'webrtc',
+          channel: archive.discoveryKey,
+        });
+      }, 10);
+      await waitForMetadata(archive);
+      return testReplicated(archive);
+    });
+
   });
 
   context('Discovery', () => {

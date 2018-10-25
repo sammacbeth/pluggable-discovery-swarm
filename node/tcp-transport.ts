@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
 import { createServer, connect } from "net";
-import { Transport, Server } from "@sammacbeth/discovery-swarm";
+import { Transport, Server, Peer } from "@sammacbeth/discovery-swarm";
 import { Duplex } from "stream";
 
 export default class TCPTransport extends EventEmitter implements Transport {
 
-  port: number
+  address: number
 
   constructor() {
     super();
@@ -21,17 +21,16 @@ export default class TCPTransport extends EventEmitter implements Transport {
           stream: () => socket,
         });
       });
-      this.port = port;
+      this.address = port;
       server.listen(port, () => {
         resolve({
-          port,
           close: () => server.close()
         });
       });
     });
   }
 
-  connect({ host, port }) : Promise<Duplex> {
+  connect({ host, port }: Peer) : Promise<Duplex> {
     return new Promise((resolve) => {
       const socket = connect(port, host, () => {
         resolve(socket);

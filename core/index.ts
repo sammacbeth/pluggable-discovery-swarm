@@ -31,7 +31,6 @@ export interface Introducer extends EventEmitter {
 }
 
 export interface Server {
-  port: number
   close: () => void
 }
 
@@ -41,9 +40,9 @@ export interface Address {
 }
 
 export interface Transport extends EventEmitter {
-  listen(port?: number) : Promise<Server>
-  connect(address: Address) : Promise<Duplex>
-  port?: number
+  listen(port: number, id: Buffer) : Promise<Server>
+  connect(address: Peer) : Promise<Duplex>
+  address: any
 }
 
 export interface Peer extends Partial<Address> {
@@ -164,12 +163,11 @@ export class Swarm extends EventEmitter {
   async listen(port?: number, onlistening?: () => void) {
     if (this._options.transport) {
       await Promise.all(Object.keys(this._options.transport).map((name) => {
-        return this._options.transport[name].listen(port).then((server) => {
+        return this._options.transport[name].listen(port, this.id).then((server) => {
           if (this.debug) {
-            console.log(`${name} server listening on ${server.port}`);
+            console.log(`${name} server listening`);
           }
           this._servers.set(name, server);
-          this._options.transport[name].port = server.port;
           this._options.transport[name].on('connection', this._onPeer);
         });
       }));
@@ -202,12 +200,8 @@ export class Swarm extends EventEmitter {
     this._peers.set(peer.id, peer);
     // when peer stream is not provided by the discoverer, find a transport that can make the connection
     if (!peer.stream && peer.type && this._options.transport[peer.type]) {
-      const address: Address = {
-        host: peer.host,
-        port: peer.port,
-      };
       peer.stream = async () => {
-        return await this._options.transport[peer.type].connect(address);
+        return await this._options.transport[peer.type].connect(peer);
       };
     }
     peer.retries = peer.retries || 4;

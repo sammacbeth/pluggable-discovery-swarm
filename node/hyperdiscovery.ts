@@ -34,7 +34,7 @@ export default class HyperDiscovery extends EventEmitter implements Introducer {
       let topic : Topic;
       if (this.announce || (opts && opts.announce)) {
         topic = this.network.announce(discoveryKey, {
-          port: opts.transport.tcp.port,
+          port: opts.transport.tcp.address,
         });
       } else {
         topic = this.network.lookup(discoveryKey);

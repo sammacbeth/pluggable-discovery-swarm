@@ -32,7 +32,7 @@ export default class DiscoveryChannel extends EventEmitter implements Introducer
   join(discoveryKey: Buffer, opts?: Partial<JoinOptions>) {
     console.log('join', discoveryKey.toString('hex'));
     if (opts.announce) {
-      this.channel.join(discoveryKey, opts.transport.tcp.port);
+      this.channel.join(discoveryKey, opts.transport.tcp.address);
     } else {
       this.channel.join(discoveryKey);
     }
