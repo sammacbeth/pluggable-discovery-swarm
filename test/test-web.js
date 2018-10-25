@@ -5,9 +5,10 @@ const chai = require('chai');
 
 const DatGatewayIntroducer = require('@sammacbeth/discovery-swarm-web/dat-gateway');
 const TCPTransport = require('@sammacbeth/discovery-swarm-webext/tcp-transport');
-const WebRTCTransport = require('@sammacbeth/discovery-swarm-web/webrtc-transport');
+const SignalHubIntroducer = require('@sammacbeth/discovery-swarm-web/signalhub').default;
 const LanDiscovery = require('@sammacbeth/discovery-swarm-webext/service-discovery');
 const { setupNetwork, createHyperDrive, waitForMetadata } = require('./utils');
+const signalhub = require('signalhub');
 
 mocha.setup('bdd');
 const expect = chai.expect;
@@ -163,27 +164,45 @@ describe('hyperdrive replication', () => {
 
   context('WebRTC Replication', () => {
 
+    const signalServers = [
+      'https://signal.dat-web.eu',
+    ];
+
     it('replicates to itself', async function () {
       this.timeout(5000);
-      const t1 = new WebRTCTransport();
-      const t2 = new WebRTCTransport();
+      const t1 = new SignalHubIntroducer(signalServers, { trickle: false });
+      const t2 = new SignalHubIntroducer(signalServers, { trickle: false });
       return selfReplicationTest({
+        introducers: [t1],
         transport: {
           webrtc: t1,
         },
       }, {
         sparse: true,
+        introducers: [t2],
         transport: {
           webrtc: t2,
         }
-      }, (network1, network2) => {
-        t2.on('signal', (s) => t1._peer.signal(s))
-        network2.emit('peer', {
-          id: 'network1',
-          offer: network1._servers.get('webrtc').offer,
-          type: 'webrtc',
-        });
+      }, () => {
       });
+    });
+
+    it('replicates to a node server', async function () {
+      this.timeout(5000);
+
+      archive = await createHyperDrive(key);
+      const wrtc = new SignalHubIntroducer(signalServers, { trickle: true });
+      const opts = {
+        debug: true,
+        sparse: true,
+        introducers: [
+          wrtc
+        ],
+      };
+
+      network = await setupNetwork(archive, opts);
+      await waitForMetadata(archive);
+      return testReplicated(archive);
     });
   });
 
