@@ -14,7 +14,7 @@ function parsePeer(peer: string) {
     return {
       id: peer,
       host,
-      port,
+      port: parseInt(port),
       type: 'tcp',
     };
   }
@@ -44,9 +44,8 @@ export default class PeerDiscovery extends EventEmitter implements Introducer {
     this.joined.set(key, setInterval(fetchAndEmit, 60000))
     fetchAndEmit();
 
-    console.log('announce?', opts);
     if (opts.announce && opts.transport) {
-      const wrtc = opts.transport.webrtc ? `${opts.transport.webrtc.address}/${opts.id}` : false;
+      const wrtc = opts.transport.webrtc ? `${opts.transport.webrtc.address}/${opts.id.toString('hex')}` : false;
       const tcp = opts.transport.tcp ? opts.transport.tcp.address : false;
       const announceResponse = await fetch(`${this.server}/${key}`, {
         method: 'POST',

@@ -1,21 +1,21 @@
 {
   "name": "@sammacbeth/discovery-swarm-test",
-  "version": "0.0.5",
+  "version": "1.0.8",
   "description": "",
   "main": "background.js",
   "scripts": {
-    "test:build": "browserify -r fs:graceful-fs -e ./test-web.js > ./test-bundle.js",
-    "test:run": "env MOZ_DISABLE_CONTENT_SANDBOX=1 web-ext run -s ./ --firefox=/opt/firefox_dev/firefox --no-reload",
-    "test:vendor": "mkdir -p test/vendor && cp node_modules/mocha/mocha.css test/vendor/",
-    "test": "npm run test:vendor && npm run test:build && npm run test:run"
+    "build": "browserify -r fs:graceful-fs -e ./test-web.js > ./test-bundle.js",
+    "run": "env MOZ_DISABLE_CONTENT_SANDBOX=1 web-ext run -s ./ --firefox=firefoxdeveloperedition --no-reload",
+    "vendor": "mkdir -p vendor && cp node_modules/mocha/mocha.css vendor/",
+    "test": "npm run vendor && npm run build && npm run run"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sammacbeth/discovery-swarm": "../core",
-    "@sammacbeth/discovery-swarm-node": "../node",
-    "@sammacbeth/discovery-swarm-web": "../web",
-    "@sammacbeth/discovery-swarm-webext": "../webext",
+    "@sammacbeth/discovery-swarm": "1.0.8",
+    "@sammacbeth/discovery-swarm-node": "1.0.8",
+    "@sammacbeth/discovery-swarm-web": "1.0.8",
+    "@sammacbeth/discovery-swarm-webext": "1.0.8",
     "@sammacbeth/libdweb": "0.0.2",
     "browserify": "^16.2.3",
     "chai": "^4.2.0",

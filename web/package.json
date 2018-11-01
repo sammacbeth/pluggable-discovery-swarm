@@ -1,14 +1,19 @@
 {
   "name": "@sammacbeth/discovery-swarm-web",
-  "version": "0.0.5",
+  "version": "1.0.8",
   "description": "",
+  "files": [
+    "*.ts",
+    "*.js",
+    "*.map"
+  ],
   "scripts": {
     "build": "tsc"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sammacbeth/discovery-swarm": "../core",
+    "@sammacbeth/discovery-swarm": "1.0.8",
     "signalhub": "^4.9.0",
     "simple-peer": "^9.1.2",
     "websocket-stream": "^5.1.2"

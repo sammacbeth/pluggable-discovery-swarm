@@ -1,8 +1,12 @@
 {
   "name": "@sammacbeth/discovery-swarm-node",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "description": "",
-  "main": "index.js",
+  "files": [
+    "*.ts",
+    "*.js",
+    "*.map"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"
@@ -18,7 +22,7 @@
   },
   "dependencies": {
     "@hyperswarm/network": "0.0.3",
-    "@sammacbeth/discovery-swarm": "../core",
+    "@sammacbeth/discovery-swarm": "1.0.8",
     "dat-swarm-defaults": "^1.0.1",
     "discovery-channel": "^5.5.1"
   }

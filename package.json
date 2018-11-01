@@ -1,0 +1,24 @@
+{
+  "name": "@sammacbeth/pluggable-discovery-swarm",
+  "version": "1.0.8",
+  "description": "A pluggable implementation of [discovery-swarm](https://github.com/mafintosh/discovery-swarm). Enables multiple different _introductors_, _announcers_ and _transports_ to be specified at runtime and used to discover and connect to peers.",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "install": "./for-each-submodule.sh npm install",
+    "build": "./for-each-submodule.sh npm run build",
+    "publish": "./for-each-submodule.sh npm publish --access public",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sammacbeth/pluggable-discovery-swarm.git"
+  },
+  "author": "Sam Macbeth",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sammacbeth/pluggable-discovery-swarm/issues"
+  },
+  "homepage": "https://github.com/sammacbeth/pluggable-discovery-swarm#readme"
+}

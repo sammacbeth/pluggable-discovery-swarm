@@ -1,7 +1,12 @@
-const Websocket = require('websocket-stream');
-const events = require('events')
+import { EventEmitter } from "events";
+import * as Websocket from "websocket-stream";
 
-class DatGatewayIntroducer extends events.EventEmitter {
+
+export default class DatGatewayIntroducer extends EventEmitter {
+
+  gateway: string
+  multiplexStream: boolean
+
   constructor(server, multiplexStream = false) {
     super();
     this.gateway = server;
@@ -30,5 +35,3 @@ class DatGatewayIntroducer extends events.EventEmitter {
 
   leave() {}
 }
-
-module.exports = DatGatewayIntroducer;

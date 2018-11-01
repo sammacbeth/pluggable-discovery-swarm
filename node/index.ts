@@ -20,4 +20,5 @@ export default (swarmOpts: Partial<SwarmOptions>, discoveryOpts: DiscoveryOption
 export {
   TCPTransport,
   HyperDiscovery,
+  DiscoveryChannel,
 }
