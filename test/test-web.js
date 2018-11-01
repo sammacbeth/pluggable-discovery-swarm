@@ -225,9 +225,10 @@ describe('hyperdrive replication', () => {
         }
       }, (n1, n2) => {
         n2.emit('peer', {
-          id: t1.address,
+          id: t1.peerId,
           type: 'webrtc',
           channel: archive.discoveryKey,
+          host: t1.address,
         });
       });
     });
@@ -255,6 +256,29 @@ describe('hyperdrive replication', () => {
       }, 10);
       await waitForMetadata(archive);
       return testReplicated(archive);
+    });
+
+    it('replicates to other signal servers', async function () {
+      this.timeout(5000);
+      const t1 = new WebRTCTransport(signalServers, { trickle: false });
+      const t2 = new WebRTCTransport(['https://signalhub-jccqtwhdwc.now.sh'], { trickle: false });
+      return selfReplicationTest({
+        transport: {
+          webrtc: t1,
+        },
+      }, {
+        sparse: true,
+        transport: {
+          webrtc: t2,
+        }
+      }, (n1, n2) => {
+        n2.emit('peer', {
+          id: t1.peerId,
+          type: 'webrtc',
+          channel: archive.discoveryKey,
+          host: t1.address,
+        });
+      });
     });
 
   });

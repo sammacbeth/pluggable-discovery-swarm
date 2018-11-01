@@ -5,33 +5,37 @@ import { Transport, Server, Peer } from "@sammacbeth/discovery-swarm";
 import { Readable, Duplex } from "stream";
 import { randomBytes } from "crypto";
 
+const APP = 'dat-webrtc';
+
 export default class WebRTCTransport extends EventEmitter implements Transport {
 
   hub: Signalhub
   peerOpts: any
   address: string
+  peerId: string
 
   constructor(servers, peerOpts) {
     super();
-    this.hub = Signalhub('dat-webrtc', servers);
+    this.address = servers[0].replace('https://', '');
+    this.hub = Signalhub(APP, servers);
     this.peerOpts = peerOpts;
   }
 
   listen(port: number, id: Buffer): Promise<Server> {
-    this.address = id.toString('hex');
+    this.peerId = id.toString('hex');
     return new Promise((resolve) => {
-      const stream: Readable = this.hub.subscribe(this.address);
-      console.log('listening to ', this.address);
+      const stream: Readable = this.hub.subscribe(this.peerId);
+      console.log('listening to ', this.peerId);
       stream.on('data', async (message) => {
-        if (message.id === this.address) {
+        if (message.id === this.peerId) {
           return;
         }
         if (message.type === 'offer') {
           console.log('got offer', message.id);
           const peer = new SimplePeer({ initiator: false, ...this.peerOpts });
           peer.once('signal', (signal) => {
-            this.hub.broadcast(this.address, {
-              id: this.address,
+            this.hub.broadcast(this.peerId, {
+              id: this.peerId,
               type: 'signal',
               target: message.id,
               signal,
@@ -58,15 +62,17 @@ export default class WebRTCTransport extends EventEmitter implements Transport {
     });
   }
 
-  async connect({ id }: Peer): Promise<Duplex> {
+  async connect({ id, host }: Peer): Promise<Duplex> {
     // TODO host can indicate different signal server
-    const myId = this.address || randomBytes(32).toString('hex');
-    const stream: Readable = this.hub.subscribe(id);
+    const sharesMyHub = this.hub.urls.indexOf(host) > -1
+    const hub = sharesMyHub ? this.hub : Signalhub(APP, [`https://${host}`]);
+    const myId = this.peerId || randomBytes(32).toString('hex');
+    const stream: Readable = hub.subscribe(id);
     // create peer and broadcast offer to peer
     const peer = new SimplePeer({ initiator: true, ...this.peerOpts });
     peer.once('signal', (offer) => {
       console.log('offer', id);
-      this.hub.broadcast(id, {
+      hub.broadcast(id, {
         id: myId,
         type: 'offer',
         offer,
@@ -90,6 +96,9 @@ export default class WebRTCTransport extends EventEmitter implements Transport {
       throw new Error('connection timeout')
     } finally {
       stream.destroy();
+      if (!sharesMyHub) {
+        hub.close();
+      }
     }
     console.log('connected', id);
     return peer;
