@@ -10,8 +10,8 @@ class TCPTransport extends events.EventEmitter {
   listen(port) {
     return new Promise((resolve) => {
       this.socket.listen({ port }).then(async (server) => {
+        this.address = server.localPort;
         resolve({
-          port: server.localPort,
           close: () => server.close(),
         });
         for await (const socket of server.connections) {
