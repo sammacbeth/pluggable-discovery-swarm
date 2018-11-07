@@ -10,7 +10,8 @@ function parsePeer(peer: string) {
       type: 'webrtc',
     };
   } else if (peer.startsWith('tcp://')) {
-    const [host, port] = peer.substring(6).split(':');
+    const host = peer.substring(6, peer.lastIndexOf(':'));
+    const port = peer.substring(host.length + 7);
     return {
       id: peer,
       host,
