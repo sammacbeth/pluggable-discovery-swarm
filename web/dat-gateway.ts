@@ -19,7 +19,7 @@ export default class DatGatewayIntroducer extends EventEmitter {
       const peer = {
         id: this.multiplexStream ? this.gateway : gatewayUrl,
         channel: discoveryKey,
-        retries: 0,
+        retries: 1,
         stream: () => Websocket(gatewayUrl),
       }
       if (this.multiplexStream) {

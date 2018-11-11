@@ -1,6 +1,6 @@
 {
   "name": "@sammacbeth/discovery-swarm-webext",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "scripts": {
     "build": "echo \"Nothing to build\"",

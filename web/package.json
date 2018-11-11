@@ -1,6 +1,6 @@
 {
   "name": "@sammacbeth/discovery-swarm-web",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "files": [
     "*.ts",
@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sammacbeth/discovery-swarm": "1.0.8",
+    "@sammacbeth/discovery-swarm": "1.0.9",
     "signalhub": "^4.9.0",
     "simple-peer": "^9.1.2",
     "websocket-stream": "^5.1.2"

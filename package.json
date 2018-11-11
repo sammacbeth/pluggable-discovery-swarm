@@ -1,6 +1,6 @@
 {
   "name": "@sammacbeth/pluggable-discovery-swarm",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A pluggable implementation of [discovery-swarm](https://github.com/mafintosh/discovery-swarm). Enables multiple different _introductors_, _announcers_ and _transports_ to be specified at runtime and used to discover and connect to peers.",
   "directories": {
     "test": "test"

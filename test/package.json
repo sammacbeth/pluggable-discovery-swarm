@@ -1,6 +1,6 @@
 {
   "name": "@sammacbeth/discovery-swarm-test",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "main": "background.js",
   "scripts": {
@@ -12,10 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sammacbeth/discovery-swarm": "1.0.8",
-    "@sammacbeth/discovery-swarm-node": "1.0.8",
-    "@sammacbeth/discovery-swarm-web": "1.0.8",
-    "@sammacbeth/discovery-swarm-webext": "1.0.8",
+    "@sammacbeth/discovery-swarm": "1.0.9",
+    "@sammacbeth/discovery-swarm-node": "1.0.9",
+    "@sammacbeth/discovery-swarm-web": "1.0.9",
+    "@sammacbeth/discovery-swarm-webext": "1.0.9",
     "@sammacbeth/libdweb": "0.0.2",
     "browserify": "^16.2.3",
     "chai": "^4.2.0",

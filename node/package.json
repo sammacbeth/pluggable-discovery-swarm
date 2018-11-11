@@ -1,6 +1,6 @@
 {
   "name": "@sammacbeth/discovery-swarm-node",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "files": [
     "*.ts",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@hyperswarm/network": "0.0.3",
-    "@sammacbeth/discovery-swarm": "1.0.8",
+    "@sammacbeth/discovery-swarm": "1.0.9",
     "dat-swarm-defaults": "^1.0.1",
     "discovery-channel": "^5.5.1"
   }

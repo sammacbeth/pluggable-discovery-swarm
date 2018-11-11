@@ -302,7 +302,6 @@ export class MultiSwarm {
 
     const add = (dk: Buffer) => {
       const key = dk.toString('hex');
-      console.log('feed', key);
       if (!this.archives.has(key)) {
         return;
       }
